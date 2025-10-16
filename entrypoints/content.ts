@@ -79,7 +79,7 @@ function getMedias(tweetElement: HTMLElement): Media[] {
     const img = mediaElement.querySelector<HTMLImageElement>("img");
     const video = mediaElement.querySelector<HTMLVideoElement>("video");
 
-    if (img) {
+    if (img && img.draggable) {
       // 画像の場合
       medias.push({
         rawUrl: img.src.replace(/[?&]name=[^&]+/, "") + "&name=large",
@@ -100,7 +100,7 @@ function getMedias(tweetElement: HTMLElement): Media[] {
         medias.push({
           rawUrl: video.src,
           path: "",
-          type: "video",
+          type: "gif",
         });
       }
     }
