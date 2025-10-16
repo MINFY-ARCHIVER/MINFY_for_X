@@ -1,4 +1,4 @@
-import type { MinfyItem } from "../types/data";
+import type { Media, MinfyItem } from "../types/data";
 import { v5 as uuidv5 } from "uuid";
 
 // MINFY用のUUID namespace（固定）
@@ -71,6 +71,44 @@ function getFavoritesCount(likeButton: HTMLButtonElement | null): number {
   return likeMatch ? parseInt(likeMatch[1].replace(/,/g, "")) : 0;
 }
 
+// メディアを取得
+function getMedias(tweetElement: HTMLElement): Media[] {
+  const medias: Media[] = [];
+  const mediaElements = tweetElement.querySelectorAll<HTMLElement>("[data-testid='tweetPhoto']");
+  mediaElements.forEach((mediaElement) => {
+    const img = mediaElement.querySelector<HTMLImageElement>("img");
+    const video = mediaElement.querySelector<HTMLVideoElement>("video");
+
+    if (img && img.draggable) {
+      // 画像の場合
+      medias.push({
+        rawUrl: img.src.replace(/[?&]name=[^&]+/, "") + "&name=large",
+        path: "",
+        type: "image",
+      });
+    } else if (video) {
+      // videoがある場合
+      if (video.src === "") {
+        // srcが空文字列なら動画
+        // TODO: 動画をDLできるようにする。
+        medias.push({
+          rawUrl: video.poster,
+          path: "",
+          type: "video",
+        });
+      } else {
+        // srcに中身があればGIF
+        medias.push({
+          rawUrl: video.src,
+          path: "",
+          type: "gif",
+        });
+      }
+    }
+  });
+  return medias;
+}
+
 // ツイートデータを取得
 function createData(tweetElement: HTMLElement) {
   const minfyItem = createMinfyItem();
@@ -93,13 +131,9 @@ function createData(tweetElement: HTMLElement) {
       return screenNameValue ? `@${screenNameValue}` : "";
     })(),
   };
-  minfyItem.core.media = Array.from(tweetElement.querySelectorAll<HTMLImageElement>("[data-testid='tweetPhoto'] img")).map((img) => ({
-    // name=largeを追加して高解像度の画像を取得
-    rawUrl: img.src.replace(/[?&]name=[^&]+/, "") + `&name=large`,
-    // MEMO: ローカル保存パスはbackgroundで決定する
-    path: "",
-    type: "image",
-  }));
+  minfyItem.core.media = getMedias(tweetElement);
+  console.log(minfyItem.core.media);
+
   minfyItem.core.id = uuidv5(minfyItem.core.rawUrl, MINFY_NAMESPACE);
   return minfyItem;
 }

@@ -106,7 +106,7 @@ export interface Media {
   path: string;
 
   // メディアの種類
-  type: "image" | "video" | "audio";
+  type: "image" | "gif" | "video" | "audio";
 }
 
 /* ==========================================================================//
