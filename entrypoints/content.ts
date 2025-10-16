@@ -95,7 +95,8 @@ function createData(tweetElement: HTMLElement) {
     })(),
   };
   minfyItem.core.media = Array.from(tweetElement.querySelectorAll<HTMLImageElement>("[data-testid='tweetPhoto'] img")).map((img) => ({
-    rawUrl: img.src.replace(/[?&]name=[^&]+/, ""),
+    // name=largeを追加して高解像度の画像を取得
+    rawUrl: img.src.replace(/[?&]name=[^&]+/, "") + `&name=large`,
     // MEMO: ローカル保存パスはbackgroundで決定する
     path: "",
     type: "image",
