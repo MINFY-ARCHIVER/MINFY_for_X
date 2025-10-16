@@ -53,7 +53,7 @@ export interface Data {
   createdAt: Date;
 
   // 本文
-  text: string;
+  text: string | null;
 
   // ハッシュタグ配列
   hashtags: string[];
@@ -62,10 +62,10 @@ export interface Data {
   favoritesCount: number;
 
   // 投稿者情報
-  user: User;
+  author: Author;
 
   // 添付メディアの配列（画像・動画・音声）
-  media: Media[];
+  media?: Media[];
 
   // ビューワーでのブックマーク状態
   bookmarked: boolean;
@@ -78,7 +78,7 @@ export interface Data {
 /*
  * 投稿者情報
  */
-export interface User {
+export interface Author {
   // プラットフォーム上のユーザーID
   id: string;
 
