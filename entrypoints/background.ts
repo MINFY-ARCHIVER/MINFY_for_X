@@ -3,12 +3,12 @@ import type { Author, Media, MinfyItem } from "../types/data";
 const MENU_ID = "raw-save-tweet";
 
 // 画像ダウンロード関数
-async function downloadImages(images: Media[], author: Author, tweetId: string, basePath: string) {
-  for (const image of images) {
+async function downloadImages(images: Media[], basePath: string) {
+  for (const [index, image] of images.entries()) {
     try {
       await browser.downloads.download({
         url: image.rawUrl,
-        filename: `${basePath}/${tweetId}_${image.type}.${image.type === "image" ? "jpg" : image.type === "video" ? "mp4" : "mp3"}`,
+        filename: `${basePath}/${index}.${image.type === "image" ? "jpg" : image.type === "video" ? "mp4" : "mp3"}`,
         conflictAction: "overwrite",
         saveAs: false,
       });
@@ -57,7 +57,7 @@ export default defineBackground(() => {
       const minfyItem = msg.payload as MinfyItem;
       const basePath = `X_Download/${minfyItem.core.author.id}/${minfyItem.core.id}`;
       const { author, media } = minfyItem.core;
-      if (media) await downloadImages(media, author, minfyItem.core.id, basePath);
+      if (media) await downloadImages(media, basePath);
       await downloadManifest(minfyItem, basePath);
     }
   });

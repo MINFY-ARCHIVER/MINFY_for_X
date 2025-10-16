@@ -64,7 +64,8 @@ function getTweetText(tweetTextElement: HTMLDivElement | null) {
 }
 
 // いいね数を取得
-function getFavoritesCount(likeButton: HTMLButtonElement): number {
+function getFavoritesCount(likeButton: HTMLButtonElement | null): number {
+  if (!likeButton) return 0;
   const ariaLabel = likeButton.getAttribute("aria-label") || "";
   const likeMatch = ariaLabel.match(/(\d+(?:,\d+)*)\s*件のいいね/);
   return likeMatch ? parseInt(likeMatch[1].replace(/,/g, "")) : 0;
@@ -73,7 +74,7 @@ function getFavoritesCount(likeButton: HTMLButtonElement): number {
 // ツイートデータを取得
 function createData(tweetElement: HTMLElement) {
   const minfyItem = createMinfyItem();
-  const userElement = tweetElement.querySelector<HTMLAnchorElement>("[data-testid^='UserAvatar-Container']") ?? new HTMLAnchorElement();
+  const userElement = tweetElement.querySelector<HTMLAnchorElement>("[data-testid^='UserAvatar-Container']");
 
   minfyItem.core.rawUrl = tweetElement.querySelector<HTMLAnchorElement>("a[dir=ltr][role=link]")?.href ?? "";
   minfyItem.core.createdAt = new Date(tweetElement.querySelector<HTMLTimeElement>("time")?.dateTime ?? "");
@@ -81,16 +82,14 @@ function createData(tweetElement: HTMLElement) {
   minfyItem.core.hashtags = Array.from(tweetElement.querySelectorAll<HTMLAnchorElement>("a[href^='/hashtag/']")).map(
     (a) => a.textContent || ""
   );
-  minfyItem.core.favoritesCount = getFavoritesCount(
-    tweetElement.querySelector<HTMLButtonElement>("button[data-testid='like']") ?? new HTMLButtonElement()
-  );
+  minfyItem.core.favoritesCount = getFavoritesCount(tweetElement.querySelector<HTMLButtonElement>("button[data-testid='like']"));
   minfyItem.core.author = {
-    id: userElement.querySelector<HTMLAnchorElement>("a[href^='/']")?.href.split("/").at(-1) ?? "",
+    id: userElement?.querySelector<HTMLAnchorElement>("a[href^='/']")?.href.split("/").at(-1) ?? "",
     name: tweetElement.querySelector<HTMLElement>("[data-testid='User-Name'] a")?.innerText ?? "",
     rawUrl: tweetElement.querySelector<HTMLAnchorElement>("a[href^='/']")?.href ?? "",
-    iconUrl: userElement.querySelector<HTMLImageElement>("img")?.src ?? "",
+    iconUrl: userElement?.querySelector<HTMLImageElement>("img")?.src ?? "",
     screenName: (() => {
-      const screenNameValue = userElement.querySelector<HTMLAnchorElement>("a[href^='/']")?.href.split("/").at(-1) ?? "";
+      const screenNameValue = userElement?.querySelector<HTMLAnchorElement>("a[href^='/']")?.href.split("/").at(-1) ?? "";
       return screenNameValue ? `@${screenNameValue}` : "";
     })(),
   };
