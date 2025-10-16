@@ -92,9 +92,8 @@ function createData(tweetElement: HTMLElement) {
   };
   minfyItem.core.media = Array.from(tweetElement.querySelectorAll<HTMLImageElement>("[data-testid='tweetPhoto'] img")).map((img) => ({
     rawUrl: img.src.replace(/[?&]name=[^&]+/, ""),
-    // MEMO: ローカル保存パスはここで決定する
-    // いいファイル構造が思いつけば、それを使う
-    path: img.src.replace(/[?&]name=[^&]+/, ""),
+    // MEMO: ローカル保存パスはbackgroundで決定する
+    path: "",
     type: "image",
   }));
 

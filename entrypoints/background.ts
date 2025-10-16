@@ -1,18 +1,20 @@
+import type { Author, Media, MinfyItem } from "../types/data";
+
 const MENU_ID = "raw-save-tweet";
 
-// ダウンロード関連の関数
-async function downloadImages(images: string[], author: string, tweetId: string) {
-  const basePath = `X_Download/${author}`;
-  for (let i = 0; i < images.length; i++) {
+// 画像ダウンロード関数
+async function downloadImages(images: Media[], author: Author, tweetId: string) {
+  const basePath = `X_Download/${author.id}`;
+  for (const image of images) {
     try {
       await browser.downloads.download({
-        url: images[i],
-        filename: `${basePath}/${tweetId}_${String(i + 1).padStart(2, "0")}.jpg`,
+        url: image.rawUrl,
+        filename: `${basePath}/${tweetId}_${image.type}.${image.type === "image" ? "jpg" : image.type === "video" ? "mp4" : "mp3"}`,
         conflictAction: "uniquify",
         saveAs: false,
       });
     } catch (err) {
-      console.error(`[RawSave] Failed:`, images[i], err);
+      console.error(`[RawSave] Failed:`, image.rawUrl, err);
     }
   }
 }
@@ -37,8 +39,9 @@ export default defineBackground(() => {
     }
     // ツイートデータをダウンロード
     if (msg.type === "DOWNLOAD_TWEET_ASSETS") {
-      const { author, tweetId, images } = msg.payload;
-      if (images) await downloadImages(images, author, tweetId);
+      const minfyItem = msg.payload as MinfyItem;
+      const { author, media } = minfyItem.core;
+      if (media) await downloadImages(media, author, minfyItem.core.id);
     }
   });
 
