@@ -3,19 +3,34 @@ import type { Author, Media, MinfyItem } from "../types/data";
 const MENU_ID = "raw-save-tweet";
 
 // 画像ダウンロード関数
-async function downloadImages(images: Media[], author: Author, tweetId: string) {
-  const basePath = `X_Download/${author.id}`;
+async function downloadImages(images: Media[], author: Author, tweetId: string, basePath: string) {
   for (const image of images) {
     try {
       await browser.downloads.download({
         url: image.rawUrl,
         filename: `${basePath}/${tweetId}_${image.type}.${image.type === "image" ? "jpg" : image.type === "video" ? "mp4" : "mp3"}`,
-        conflictAction: "uniquify",
+        conflictAction: "overwrite",
         saveAs: false,
       });
     } catch (err) {
       console.error(`[RawSave] Failed:`, image.rawUrl, err);
     }
+  }
+}
+
+// manifest.jsonをダウンロード
+async function downloadManifest(minfyItem: MinfyItem, basePath: string) {
+  const json = JSON.stringify(minfyItem, null, 2);
+  const dataUrl = `data:application/json;charset=utf-8,${encodeURIComponent(json)}`;
+  try {
+    await browser.downloads.download({
+      url: dataUrl,
+      filename: `${basePath}/manifest.json`,
+      conflictAction: "overwrite",
+      saveAs: false,
+    });
+  } catch (err) {
+    console.error(`[RawSave] Failed to save manifest:`, err);
   }
 }
 
@@ -40,8 +55,10 @@ export default defineBackground(() => {
     // ツイートデータをダウンロード
     if (msg.type === "DOWNLOAD_TWEET_ASSETS") {
       const minfyItem = msg.payload as MinfyItem;
+      const basePath = `X_Download/${minfyItem.core.author.id}/${minfyItem.core.id}`;
       const { author, media } = minfyItem.core;
-      if (media) await downloadImages(media, author, minfyItem.core.id);
+      if (media) await downloadImages(media, author, minfyItem.core.id, basePath);
+      await downloadManifest(minfyItem, basePath);
     }
   });
 

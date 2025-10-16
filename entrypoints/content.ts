@@ -1,4 +1,8 @@
 import type { MinfyItem } from "../types/data";
+import { v5 as uuidv5 } from "uuid";
+
+// MINFY用のUUID namespace（固定）
+const MINFY_NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
 
 // MINFY Itemの雛形を作成
 function createMinfyItem(): MinfyItem {
@@ -6,7 +10,7 @@ function createMinfyItem(): MinfyItem {
     extensionVersion: browser.runtime.getManifest().version,
     savedAt: new Date(),
     core: {
-      id: crypto.randomUUID(),
+      id: "",
       source: "x",
       rawUrl: "",
       createdAt: new Date(),
@@ -96,7 +100,7 @@ function createData(tweetElement: HTMLElement) {
     path: "",
     type: "image",
   }));
-
+  minfyItem.core.id = uuidv5(minfyItem.core.rawUrl, MINFY_NAMESPACE);
   return minfyItem;
 }
 
