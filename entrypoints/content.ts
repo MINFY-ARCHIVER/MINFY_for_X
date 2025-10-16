@@ -90,6 +90,7 @@ function getMedias(tweetElement: HTMLElement): Media[] {
       // videoがある場合
       if (video.src === "") {
         // srcが空文字列なら動画
+        // TODO: 動画をDLできるようにする。
         medias.push({
           rawUrl: video.poster,
           path: "",
