@@ -1,6 +1,6 @@
-import type { Author, Media, MinfyItem } from "../types/data";
+import type { Media, MinfyItem } from "../types/data";
 
-const MENU_ID = "raw-save-tweet";
+const MENU_ID = "minfy-for-x";
 
 // バリデーション関数
 function validateMinfyItem(minfyItem: MinfyItem): boolean {
@@ -48,7 +48,7 @@ export default defineBackground(() => {
   browser.runtime.onInstalled.addListener(() => {
     browser.contextMenus.create({
       id: MENU_ID,
-      title: "Raw Save Tweet",
+      title: "ツイートをMINFYで保存",
       contexts: ["all"],
       documentUrlPatterns: ["*://*.x.com/*", "*://*.twitter.com/*"],
       enabled: false,
