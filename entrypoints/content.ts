@@ -206,7 +206,7 @@ export default defineContentScript({
 
     // メニュークリック時に受け取るメッセージ
     browser.runtime.onMessage.addListener((msg) => {
-      if (msg?.type === "RAW_SAVE_TRIGGER" && tweetElement) {
+      if (msg?.type === "MINFY_FOR_X_TRIGGER" && tweetElement) {
         // ツイート要素を作成し、backgroundに送信
         const sendMinfyItem = (element: HTMLElement) => {
           const minfyItem = createData(element);
