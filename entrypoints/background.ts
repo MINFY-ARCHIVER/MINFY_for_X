@@ -1,6 +1,6 @@
-import type { Author, Media, MinfyItem } from "../types/data";
+import type { Media, MinfyItem } from "../types/data";
 
-const MENU_ID = "raw-save-tweet";
+const MENU_ID = "minfy-for-x";
 
 // バリデーション関数
 function validateMinfyItem(minfyItem: MinfyItem): boolean {
@@ -21,9 +21,7 @@ async function downloadImages(images: Media[], basePath: string) {
         conflictAction: "overwrite",
         saveAs: false,
       });
-    } catch (err) {
-      console.error(`[RawSave] Failed:`, image.rawUrl, err);
-    }
+    } catch (err) {}
   }
 }
 
@@ -38,9 +36,7 @@ async function downloadManifest(minfyItem: MinfyItem, basePath: string) {
       conflictAction: "overwrite",
       saveAs: false,
     });
-  } catch (err) {
-    console.error(`[RawSave] Failed to save manifest:`, err);
-  }
+  } catch (err) {}
 }
 
 // 諸々の処理
@@ -48,7 +44,7 @@ export default defineBackground(() => {
   browser.runtime.onInstalled.addListener(() => {
     browser.contextMenus.create({
       id: MENU_ID,
-      title: "Raw Save Tweet",
+      title: "ツイートをMINFYで保存",
       contexts: ["all"],
       documentUrlPatterns: ["*://*.x.com/*", "*://*.twitter.com/*"],
       enabled: false,
@@ -66,7 +62,7 @@ export default defineBackground(() => {
       const minfyItem = msg.payload as MinfyItem;
       if (!validateMinfyItem(minfyItem)) return;
 
-      const basePath = `X_Download/${minfyItem.core.author.id}/${minfyItem.core.id}`;
+      const basePath = `X_Downloaded/${minfyItem.core.author.id}/${minfyItem.core.id}`;
       const { media } = minfyItem.core;
       if (media) await downloadImages(media, basePath);
       await downloadManifest(minfyItem, basePath);
@@ -76,7 +72,7 @@ export default defineBackground(() => {
   // メニュークリック時にcontent.tsにメッセージを送信
   browser.contextMenus.onClicked.addListener((info, tab) => {
     if (info.menuItemId === MENU_ID && tab?.id) {
-      browser.tabs.sendMessage(tab.id, { type: "RAW_SAVE_TRIGGER" });
+      browser.tabs.sendMessage(tab.id, { type: "MINFY_FOR_X_TRIGGER" });
     }
   });
 });
