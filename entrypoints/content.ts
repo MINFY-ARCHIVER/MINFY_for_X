@@ -165,14 +165,24 @@ export default defineContentScript({
     // メニュークリック時に受け取るメッセージ
     browser.runtime.onMessage.addListener((msg) => {
       if (msg?.type === "RAW_SAVE_TRIGGER" && tweetElement) {
-        // minfyItemを作成
-        const minfyItem = createData(tweetElement);
-        console.log(minfyItem.core);
-        // backgroundにminfyItemを送信
-        browser.runtime.sendMessage({
-          type: "DOWNLOAD_TWEET_ASSETS",
-          payload: minfyItem,
-        });
+        // ツイート要素を作成し、backgroundに送信
+        const sendMinfyItem = (element: HTMLElement) => {
+          const minfyItem = createData(element);
+          console.log(minfyItem.core);
+          browser.runtime.sendMessage({ type: "DOWNLOAD_TWEET_ASSETS", payload: minfyItem });
+        };
+
+        const quotedElement = tweetElement.querySelector("[tabindex='0']") as HTMLElement | null;
+        if (quotedElement) {
+          // 引用ツイートの場合、元ツイートと引用ツイートをそれぞれ送信
+          const mainTweetClone = tweetElement.cloneNode(true) as HTMLElement;
+          mainTweetClone.querySelector("[tabindex='0']")?.remove();
+          sendMinfyItem(mainTweetClone);
+          sendMinfyItem(quotedElement);
+        } else {
+          // 通常のツイートの場合、ツイートを送信
+          sendMinfyItem(tweetElement);
+        }
       }
     });
   },
