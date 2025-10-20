@@ -157,7 +157,7 @@ function getMedias(tweetElement: HTMLElement): Media[] {
 }
 
 // ツイートデータを取得
-function createData(tweetElement: HTMLElement) {
+function createData(tweetElement: HTMLElement, quotedTweetId?: string) {
   const minfyItem = createMinfyItem();
   const basicInfo = getTweetBasicInfo(tweetElement);
 
@@ -176,6 +176,11 @@ function createData(tweetElement: HTMLElement) {
 
   // UUIDを生成
   minfyItem.core.id = uuidv5(minfyItem.core.rawUrl, MINFY_NAMESPACE);
+
+  // 引用ツイートの場合、引用元IDを保存
+  if (quotedTweetId) {
+    minfyItem.meta = { quotedTweetId };
+  }
 
   return minfyItem;
 }
@@ -207,23 +212,23 @@ export default defineContentScript({
     // メニュークリック時に受け取るメッセージ
     browser.runtime.onMessage.addListener((msg) => {
       if (msg?.type === "MINFY_FOR_X_TRIGGER" && tweetElement) {
-        // ツイート要素を作成し、backgroundに送信
-        const sendMinfyItem = (element: HTMLElement) => {
-          const minfyItem = createData(element);
+        const sendMinfyItem = (minfyItem: MinfyItem) => {
           console.log(minfyItem.core);
           browser.runtime.sendMessage({ type: "DOWNLOAD_TWEET_ASSETS", payload: minfyItem });
         };
 
         const quotedElement = tweetElement.querySelector("[tabindex='0']") as HTMLElement | null;
         if (quotedElement) {
-          // 引用ツイートの場合、元ツイートと引用ツイートをそれぞれ送信
+          // 引用ツイートの場合、引用元IDを取得して本ツイートに保存
+          const quotedMinfyItem = createData(quotedElement);
           const mainTweetClone = tweetElement.cloneNode(true) as HTMLElement;
           mainTweetClone.querySelector("[tabindex='0']")?.remove();
-          sendMinfyItem(mainTweetClone);
-          sendMinfyItem(quotedElement);
+          const mainMinfyItem = createData(mainTweetClone, quotedMinfyItem.core.id);
+
+          sendMinfyItem(mainMinfyItem);
+          sendMinfyItem(quotedMinfyItem);
         } else {
-          // 通常のツイートの場合、ツイートを送信
-          sendMinfyItem(tweetElement);
+          sendMinfyItem(createData(tweetElement));
         }
       }
     });
