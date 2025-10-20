@@ -114,7 +114,10 @@ function createData(tweetElement: HTMLElement) {
   const minfyItem = createMinfyItem();
   const userElement = tweetElement.querySelector<HTMLAnchorElement>("[data-testid^='UserAvatar-Container']");
 
-  minfyItem.core.rawUrl = tweetElement.querySelector<HTMLAnchorElement>("a[dir=ltr][role=link]")?.href ?? "";
+  minfyItem.core.rawUrl =
+    tweetElement.querySelector<HTMLAnchorElement>("a[dir=ltr][role=link]")?.href ??
+    tweetElement.querySelector<HTMLAnchorElement>("a[role=link]")?.href?.replace("/photo/1", "") ??
+    "";
   minfyItem.core.createdAt = new Date(tweetElement.querySelector<HTMLTimeElement>("time")?.dateTime ?? "");
   minfyItem.core.text = getTweetText(tweetElement.querySelector<HTMLDivElement>("div[lang][data-testid='tweetText']"));
   minfyItem.core.hashtags = Array.from(tweetElement.querySelectorAll<HTMLAnchorElement>("a[href^='/hashtag/']")).map(
@@ -122,12 +125,18 @@ function createData(tweetElement: HTMLElement) {
   );
   minfyItem.core.favoritesCount = getFavoritesCount(tweetElement.querySelector<HTMLButtonElement>("button[data-testid='like']"));
   minfyItem.core.author = {
-    id: userElement?.querySelector<HTMLAnchorElement>("a[href^='/']")?.href.split("/").at(-1) ?? "",
-    name: tweetElement.querySelector<HTMLElement>("[data-testid='User-Name'] a")?.innerText ?? "",
-    rawUrl: tweetElement.querySelector<HTMLAnchorElement>("a[href^='/']")?.href ?? "",
+    id:
+      userElement?.querySelector<HTMLAnchorElement>("a[href^='/']")?.href.split("/").at(-1) ??
+      userElement?.dataset.testid?.replace("UserAvatar-Container-", "") ??
+      "",
+    name: tweetElement.querySelector<HTMLElement>("[data-testid='User-Name'] div")?.innerText ?? "",
+    rawUrl: (tweetElement.querySelector<HTMLAnchorElement>("a[href^='/']")?.href ?? "").replace(/\/status\/\d+.*$/, ""),
     iconUrl: userElement?.querySelector<HTMLImageElement>("img")?.src ?? "",
     screenName: (() => {
-      const screenNameValue = userElement?.querySelector<HTMLAnchorElement>("a[href^='/']")?.href.split("/").at(-1) ?? "";
+      const screenNameValue =
+        userElement?.querySelector<HTMLAnchorElement>("a[href^='/']")?.href.split("/").at(-1) ??
+        userElement?.dataset.testid?.replace("UserAvatar-Container-", "") ??
+        "";
       return screenNameValue ? `@${screenNameValue}` : "";
     })(),
   };
@@ -165,14 +174,24 @@ export default defineContentScript({
     // メニュークリック時に受け取るメッセージ
     browser.runtime.onMessage.addListener((msg) => {
       if (msg?.type === "RAW_SAVE_TRIGGER" && tweetElement) {
-        // minfyItemを作成
-        const minfyItem = createData(tweetElement);
-        console.log(minfyItem.core);
-        // backgroundにminfyItemを送信
-        browser.runtime.sendMessage({
-          type: "DOWNLOAD_TWEET_ASSETS",
-          payload: minfyItem,
-        });
+        // ツイート要素を作成し、backgroundに送信
+        const sendMinfyItem = (element: HTMLElement) => {
+          const minfyItem = createData(element);
+          console.log(minfyItem.core);
+          browser.runtime.sendMessage({ type: "DOWNLOAD_TWEET_ASSETS", payload: minfyItem });
+        };
+
+        const quotedElement = tweetElement.querySelector("[tabindex='0']") as HTMLElement | null;
+        if (quotedElement) {
+          // 引用ツイートの場合、元ツイートと引用ツイートをそれぞれ送信
+          const mainTweetClone = tweetElement.cloneNode(true) as HTMLElement;
+          mainTweetClone.querySelector("[tabindex='0']")?.remove();
+          sendMinfyItem(mainTweetClone);
+          sendMinfyItem(quotedElement);
+        } else {
+          // 通常のツイートの場合、ツイートを送信
+          sendMinfyItem(tweetElement);
+        }
       }
     });
   },

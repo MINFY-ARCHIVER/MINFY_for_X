@@ -2,6 +2,15 @@ import type { Author, Media, MinfyItem } from "../types/data";
 
 const MENU_ID = "raw-save-tweet";
 
+// バリデーション関数
+function validateMinfyItem(minfyItem: MinfyItem): boolean {
+  const { core } = minfyItem;
+  if (!core.id || !core.rawUrl || !core.author.id || !core.author.name) {
+    return false;
+  }
+  return true;
+}
+
 // 画像ダウンロード関数
 async function downloadImages(images: Media[], basePath: string) {
   for (const [index, image] of images.entries()) {
@@ -55,8 +64,10 @@ export default defineBackground(() => {
     // ツイートデータをダウンロード
     if (msg.type === "DOWNLOAD_TWEET_ASSETS") {
       const minfyItem = msg.payload as MinfyItem;
+      if (!validateMinfyItem(minfyItem)) return;
+
       const basePath = `X_Download/${minfyItem.core.author.id}/${minfyItem.core.id}`;
-      const { author, media } = minfyItem.core;
+      const { media } = minfyItem.core;
       if (media) await downloadImages(media, basePath);
       await downloadManifest(minfyItem, basePath);
     }
