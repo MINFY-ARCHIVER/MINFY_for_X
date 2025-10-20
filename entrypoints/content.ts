@@ -124,21 +124,19 @@ function createData(tweetElement: HTMLElement) {
     (a) => a.textContent || ""
   );
   minfyItem.core.favoritesCount = getFavoritesCount(tweetElement.querySelector<HTMLButtonElement>("button[data-testid='like']"));
+  const authorId =
+    userElement?.querySelector<HTMLAnchorElement>("a[href^='/']")?.href.split("/").at(-1) ??
+    userElement?.dataset.testid?.replace("UserAvatar-Container-", "") ??
+    "";
+
   minfyItem.core.author = {
-    id:
-      userElement?.querySelector<HTMLAnchorElement>("a[href^='/']")?.href.split("/").at(-1) ??
-      userElement?.dataset.testid?.replace("UserAvatar-Container-", "") ??
-      "",
+    id: authorId,
     name: tweetElement.querySelector<HTMLElement>("[data-testid='User-Name'] div")?.innerText ?? "",
-    rawUrl: (tweetElement.querySelector<HTMLAnchorElement>("a[href^='/']")?.href ?? "").replace(/\/status\/\d+.*$/, ""),
+    rawUrl:
+      userElement?.querySelector<HTMLAnchorElement>("a[href^='/']")?.href.replace(/\/status\/\d+.*$/, "") ??
+      (authorId ? `https://x.com/${authorId}` : ""),
     iconUrl: userElement?.querySelector<HTMLImageElement>("img")?.src ?? "",
-    screenName: (() => {
-      const screenNameValue =
-        userElement?.querySelector<HTMLAnchorElement>("a[href^='/']")?.href.split("/").at(-1) ??
-        userElement?.dataset.testid?.replace("UserAvatar-Container-", "") ??
-        "";
-      return screenNameValue ? `@${screenNameValue}` : "";
-    })(),
+    screenName: authorId ? `@${authorId}` : "",
   };
   minfyItem.core.media = getMedias(tweetElement);
   console.log(minfyItem.core.media);
