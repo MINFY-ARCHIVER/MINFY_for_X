@@ -135,7 +135,7 @@ function createData(tweetElement: HTMLElement) {
     rawUrl:
       userElement?.querySelector<HTMLAnchorElement>("a[href^='/']")?.href.replace(/\/status\/\d+.*$/, "") ??
       (authorId ? `https://x.com/${authorId}` : ""),
-    iconUrl: userElement?.querySelector<HTMLImageElement>("img")?.src ?? "",
+    iconUrl: userElement?.querySelector<HTMLImageElement>("img")?.src.replace(/_(normal|mini)/, "") ?? "",
     screenName: authorId ? `@${authorId}` : "",
   };
   minfyItem.core.media = getMedias(tweetElement);
