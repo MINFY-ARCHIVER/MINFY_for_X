@@ -71,6 +71,53 @@ function getFavoritesCount(likeButton: HTMLButtonElement | null): number {
   return likeMatch ? parseInt(likeMatch[1].replace(/,/g, "")) : 0;
 }
 
+// ツイート基本情報を取得
+function getTweetBasicInfo(tweetElement: HTMLElement) {
+  const rawUrl =
+    tweetElement.querySelector<HTMLAnchorElement>("a[dir=ltr][role=link]")?.href ??
+    tweetElement.querySelector<HTMLAnchorElement>("a[role=link]")?.href?.replace("/photo/1", "") ??
+    "";
+  const createdAt = new Date(tweetElement.querySelector<HTMLTimeElement>("time")?.dateTime ?? "");
+  const text = getTweetText(tweetElement.querySelector<HTMLDivElement>("div[lang][data-testid='tweetText']"));
+  const hashtags = Array.from(tweetElement.querySelectorAll<HTMLAnchorElement>("a[href^='/hashtag/']")).map((a) => a.textContent || "");
+  const favoritesCount = getFavoritesCount(tweetElement.querySelector<HTMLButtonElement>("button[data-testid='like']"));
+
+  return {
+    rawUrl,
+    createdAt,
+    text,
+    hashtags,
+    favoritesCount,
+  };
+}
+
+// 作者情報を取得
+function getAuthor(tweetElement: HTMLElement) {
+  const userElement = tweetElement.querySelector<HTMLAnchorElement>("[data-testid^='UserAvatar-Container']");
+  // 作者ID取得
+  const authorId =
+    userElement?.querySelector<HTMLAnchorElement>("a[href^='/']")?.href.split("/").at(-1) ??
+    userElement?.dataset.testid?.replace("UserAvatar-Container-", "") ??
+    "";
+
+  // 作者のURL取得
+  const rawUrl = `https://x.com/${authorId}`;
+  // 作者の名前
+  const name = tweetElement.querySelector<HTMLElement>("[data-testid='User-Name'] div")?.innerText ?? "";
+  // 作者のアイコンURL（サイズ指定を削除）
+  const iconUrl = userElement?.querySelector<HTMLImageElement>("img")?.src.replace(/_(normal|mini)/, "") ?? "";
+  // 作者のスクリーンネーム
+  const screenName = authorId ? `@${authorId}` : "";
+
+  return {
+    id: authorId,
+    name,
+    rawUrl,
+    iconUrl,
+    screenName,
+  };
+}
+
 // メディアを取得
 function getMedias(tweetElement: HTMLElement): Media[] {
   const medias: Media[] = [];
@@ -112,36 +159,24 @@ function getMedias(tweetElement: HTMLElement): Media[] {
 // ツイートデータを取得
 function createData(tweetElement: HTMLElement) {
   const minfyItem = createMinfyItem();
-  const userElement = tweetElement.querySelector<HTMLAnchorElement>("[data-testid^='UserAvatar-Container']");
+  const basicInfo = getTweetBasicInfo(tweetElement);
 
-  minfyItem.core.rawUrl =
-    tweetElement.querySelector<HTMLAnchorElement>("a[dir=ltr][role=link]")?.href ??
-    tweetElement.querySelector<HTMLAnchorElement>("a[role=link]")?.href?.replace("/photo/1", "") ??
-    "";
-  minfyItem.core.createdAt = new Date(tweetElement.querySelector<HTMLTimeElement>("time")?.dateTime ?? "");
-  minfyItem.core.text = getTweetText(tweetElement.querySelector<HTMLDivElement>("div[lang][data-testid='tweetText']"));
-  minfyItem.core.hashtags = Array.from(tweetElement.querySelectorAll<HTMLAnchorElement>("a[href^='/hashtag/']")).map(
-    (a) => a.textContent || ""
-  );
-  minfyItem.core.favoritesCount = getFavoritesCount(tweetElement.querySelector<HTMLButtonElement>("button[data-testid='like']"));
-  const authorId =
-    userElement?.querySelector<HTMLAnchorElement>("a[href^='/']")?.href.split("/").at(-1) ??
-    userElement?.dataset.testid?.replace("UserAvatar-Container-", "") ??
-    "";
+  // ツイートの基本情報
+  minfyItem.core.rawUrl = basicInfo.rawUrl;
+  minfyItem.core.createdAt = basicInfo.createdAt;
+  minfyItem.core.text = basicInfo.text;
+  minfyItem.core.hashtags = basicInfo.hashtags;
+  minfyItem.core.favoritesCount = basicInfo.favoritesCount;
 
-  minfyItem.core.author = {
-    id: authorId,
-    name: tweetElement.querySelector<HTMLElement>("[data-testid='User-Name'] div")?.innerText ?? "",
-    rawUrl:
-      userElement?.querySelector<HTMLAnchorElement>("a[href^='/']")?.href.replace(/\/status\/\d+.*$/, "") ??
-      (authorId ? `https://x.com/${authorId}` : ""),
-    iconUrl: userElement?.querySelector<HTMLImageElement>("img")?.src.replace(/_(normal|mini)/, "") ?? "",
-    screenName: authorId ? `@${authorId}` : "",
-  };
+  // 作者情報
+  minfyItem.core.author = getAuthor(tweetElement);
+
+  // メディア
   minfyItem.core.media = getMedias(tweetElement);
-  console.log(minfyItem.core.media);
 
+  // UUIDを生成
   minfyItem.core.id = uuidv5(minfyItem.core.rawUrl, MINFY_NAMESPACE);
+
   return minfyItem;
 }
 
